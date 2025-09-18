@@ -1,47 +1,76 @@
-import React, { useState, useEffect } from 'react';
-import logo from './logo.svg';
+import React, { useState } from 'react';
 import './App.css';
+import './theme.css';
+import NavBar from './components/NavBar';
+import SideBar from './components/SideBar';
+import MapSection from './components/MapSection';
+import ETACards from './components/ETACards';
+import NotificationPanel from './components/NotificationPanel';
+import mockData from './data/mockData';
 
-// PUBLIC_INTERFACE
+/**
+ * PUBLIC_INTERFACE
+ * Main application entry for the Bus Tracker.
+ * Renders app-wide containers and handles high-level state integration.
+ */
 function App() {
-  const [theme, setTheme] = useState('light');
+  // Mocked filters, selected route, notification state, and language
+  const [selectedRoute, setSelectedRoute] = useState(mockData.routes[0]);
+  const [language, setLanguage] = useState('en');
+  const [filter, setFilter] = useState('');
+  const [showSidebar, setShowSidebar] = useState(false);
 
-  // Effect to apply theme to document element
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
+  // Derive filtered buses for sidebar/search filter
+  const filteredBuses = filter
+    ? mockData.buses.filter((bus) =>
+        bus.route.toLowerCase().includes(filter.toLowerCase())
+      )
+    : mockData.buses;
 
-  // PUBLIC_INTERFACE
-  const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-  };
+  // Change language handler
+  const changeLanguage = (lang) => setLanguage(lang);
+
+  // Select route from sidebar
+  const handleRouteSelect = (route) => setSelectedRoute(route);
+
+  // Filter input changes
+  const handleFilterChange = (value) => setFilter(value);
+
+  // Toggle sidebar on mobile
+  const handleSidebarToggle = () => setShowSidebar((prev) => !prev);
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <button 
-          className="theme-toggle" 
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-        >
-          {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
-        </button>
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <p>
-          Current theme: <strong>{theme}</strong>
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="bt-app ocean-theme">
+      <NavBar
+        language={language}
+        onLanguageChange={changeLanguage}
+        onSidebarToggle={handleSidebarToggle}
+      />
+      <div className="bt-main-layout">
+        <SideBar
+          routes={mockData.routes}
+          selectedRoute={selectedRoute}
+          onRouteSelect={handleRouteSelect}
+          filter={filter}
+          onFilterChange={handleFilterChange}
+          visible={showSidebar}
+          onClose={() => setShowSidebar(false)}
+        />
+        <main className="bt-main-content">
+          <MapSection
+            buses={filteredBuses}
+            stops={selectedRoute.stops}
+            route={selectedRoute}
+          />
+          <ETACards
+            buses={filteredBuses}
+            stops={selectedRoute.stops}
+            route={selectedRoute}
+            language={language}
+          />
+        </main>
+      </div>
+      <NotificationPanel notifications={mockData.notifications} />
     </div>
   );
 }
